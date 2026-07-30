@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ListPreference
+        android:key="search_engine"
+        android:title="@string/search_engine"
+        android:defaultValue="google" />
+
+    <EditTextPreference
+        android:key="custom_search_template"
+        android:title="@string/custom_search_template"
+        android:defaultValue="https://www.google.com/search?q={query}"
+        android:inputType="textUri"
+        android:selectAllOnFocus="true"
+        android:singleLine="true" />
+
+</PreferenceScreen>

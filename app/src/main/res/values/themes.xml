@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Kitool" parent="android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:colorPrimary">?android:colorBackground</item>
+        <item name="android:colorPrimaryDark">?android:colorPrimary</item>
+        <item name="android:navigationBarColor">?android:colorPrimaryDark</item>
+        <item name="android:windowLightNavigationBar">?android:isLightTheme</item>
+        <item name="android:windowLightStatusBar">?android:isLightTheme</item>
+    </style>
+
+    <style name="Theme.Kitool.Transparent" parent="Theme.Kitool">
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+</resources>

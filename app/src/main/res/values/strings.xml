@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kitool</string>
+    <string name="action_save_copy">保存副本</string>
+    <string name="action_web_search">网页搜索</string>
+    <string name="action_share_to_open">转为打开</string>
+    <string name="action_open_to_share">转为分享</string>
+    <string name="settings_title">设置</string>
+
+    <string name="search_engine">搜索引擎</string>
+    <string name="custom_search_template">自定义搜索网址</string>
+    <string name="custom_search_template_invalid">网址无效</string>
+
+    <string name="engine_google">Google</string>
+    <string name="engine_bing">Bing</string>
+    <string name="engine_duckduckgo">DuckDuckGo</string>
+    <string name="engine_baidu">百度</string>
+    <string name="engine_sogou">搜狗</string>
+    <string name="engine_so">360 搜索</string>
+    <string name="engine_yahoo">Yahoo</string>
+    <string name="engine_yandex">Yandex</string>
+    <string name="engine_brave">Brave Search</string>
+    <string name="engine_custom">自定义</string>
+
+    <string name="save_confirm_message">是否保存这 %1$d 个文件的副本？</string>
+    <string name="save_error_no_files">此操作中没有可读取的文件</string>
+    <string name="save_error_start">系统未允许启动保存任务</string>
+    <string name="save_error_timeout">保存任务已超时停止，请检查“下载”目录</string>
+    <string name="save_result_complete">已将 %1$d/%2$d 个副本保存到%3$s</string>
+    <string name="save_result_partial">已将 %1$d/%2$d 个副本保存到%3$s，其余文件无法读取</string>
+    <string name="save_result_failed">未能保存文件，文件提供方可能拒绝了访问</string>
+    <string name="downloads_root">“下载”</string>
+
+    <string name="notification_channel_name">文件副本</string>
+    <string name="notification_channel_description">后台保存文件时的进度</string>
+    <string name="notification_saving_title">正在保存副本</string>
+    <string name="notification_saving_message">%1$d/%2$d 个文件</string>
+
+    <string name="search_error_empty">没有收到文本</string>
+    <string name="search_error_template">自定义搜索网址无效，请打开 Kitool 设置修改</string>
+    <string name="search_error_browser">没有浏览器能够打开此链接</string>
+
+    <string name="chooser_open_with">选择打开方式</string>
+    <string name="chooser_share_with">选择分享目标</string>
+    <string name="bridge_error_no_content">没有收到可转换的内容</string>
+    <string name="bridge_error_no_handler">没有其他应用能够处理此内容</string>
+</resources>
