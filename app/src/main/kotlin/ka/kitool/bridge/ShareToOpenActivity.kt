@@ -10,13 +10,12 @@ import ka.kitool.R
 class ShareToOpenActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val input = BridgeIntents.shareToOpen(this, intent)
-        if (input == null) {
+        val target = BridgeIntents.shareToOpen(this, intent)
+        if (target == null) {
             showAndFinish(R.string.bridge_error_no_content)
             return
         }
 
-        val target = BridgeIntents.openIntent(input)
         if (!BridgeIntents.hasExternalHandler(this, target)) {
             showAndFinish(R.string.bridge_error_no_handler)
             return

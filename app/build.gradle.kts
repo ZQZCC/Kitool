@@ -166,8 +166,8 @@ android {
         applicationId = "ka.kitool"
         minSdk = kitoolMinSdk
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
     }
 
@@ -183,10 +183,7 @@ android {
             vcsInfo {
                 include = false
             }
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+            proguardFiles("proguard-rules.pro")
         }
     }
 
@@ -216,6 +213,8 @@ val rawReleaseApk =
     layout.buildDirectory.file("outputs/apk/release/app-release-unsigned.apk")
 val unalignedMinimalReleaseApk =
     layout.buildDirectory.file("outputs/apk/release/app-release-minimal-unaligned.apk")
+val optimizedUnalignedMinimalReleaseApk =
+    layout.buildDirectory.file("outputs/apk/release/app-release-minimal-optimized-unaligned.apk")
 val minimalReleaseApk =
     layout.buildDirectory.file("outputs/apk/release/app-release-minimal-unsigned.apk")
 val sdkBootClasspath = androidComponents.sdkComponents.bootClasspath
@@ -233,6 +232,10 @@ val zipalign =
 val d8Jar =
     sdkDirectory.map { directory ->
         directory.file("build-tools/$kitoolBuildToolsVersion/lib/d8.jar")
+    }
+val aapt2 =
+    sdkDirectory.map { directory ->
+        directory.file("build-tools/$kitoolBuildToolsVersion/aapt2$executableSuffix")
     }
 
 val minimizeReleaseApk =
@@ -369,12 +372,33 @@ val minimizeReleaseApk =
         }
     }
 
+val optimizeMinimalReleaseApk =
+    tasks.register<Exec>("optimizeMinimalReleaseApk") {
+        group = "build"
+        description = "Optimizes resources in the minimized unsigned release APK."
+        dependsOn(minimizeReleaseApk)
+        inputs.file(unalignedMinimalReleaseApk)
+        inputs.file(aapt2)
+        outputs.file(optimizedUnalignedMinimalReleaseApk)
+
+        doFirst {
+            commandLine(
+                aapt2.get().asFile,
+                "optimize",
+                "--collapse-resource-names",
+                "-o",
+                optimizedUnalignedMinimalReleaseApk.get().asFile,
+                unalignedMinimalReleaseApk.get().asFile,
+            )
+        }
+    }
+
 val alignMinimalReleaseApk =
     tasks.register<Exec>("alignMinimalReleaseApk") {
         group = "build"
-        description = "Aligns the minimized unsigned release APK."
-        dependsOn(minimizeReleaseApk)
-        inputs.file(unalignedMinimalReleaseApk)
+        description = "Aligns the minimized and resource-optimized unsigned release APK."
+        dependsOn(optimizeMinimalReleaseApk)
+        inputs.file(optimizedUnalignedMinimalReleaseApk)
         inputs.file(zipalign)
         outputs.file(minimalReleaseApk)
 
@@ -384,7 +408,7 @@ val alignMinimalReleaseApk =
                 "-f",
                 "-p",
                 "4",
-                unalignedMinimalReleaseApk.get().asFile,
+                optimizedUnalignedMinimalReleaseApk.get().asFile,
                 minimalReleaseApk.get().asFile,
             )
         }

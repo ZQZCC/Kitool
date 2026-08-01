@@ -6,10 +6,9 @@ import org.junit.Test
 class SearchEngineTest {
     @Test
     fun `all built-in templates are valid HTTPS search URLs`() {
-        SearchEngine.all
-            .filter { it != SearchEngine.CUSTOM }
-            .forEach { engine ->
-                assertTrue(engine.id, SearchUrl.isValidTemplate(engine.template.orEmpty()))
-            }
+        for (id in searchEngineIds()) {
+            val template = searchTemplateFor(id) ?: continue
+            assertTrue(id, SearchUrl.isValidTemplate(template))
+        }
     }
 }

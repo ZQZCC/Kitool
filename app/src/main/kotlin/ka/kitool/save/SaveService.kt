@@ -11,8 +11,6 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.database.Cursor
 import android.net.Uri
-import android.os.BadParcelableException
-import android.os.Build
 import android.os.CancellationSignal
 import android.os.Environment
 import android.os.Handler
@@ -26,7 +24,6 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -36,8 +33,8 @@ import ka.kitool.R
 class SaveService : Service() {
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val jobs = ConcurrentHashMap.newKeySet<CopyJob>()
-    private val cancellationStarted = AtomicBoolean(false)
+    private val jobs = HashSet<CopyJob>()
+    private var cancellationStarted = false
 
     @Volatile
     private var latestStartId = 0
@@ -153,7 +150,8 @@ class SaveService : Service() {
 
     private fun cancelJobsAsync() {
         executor.shutdownNow()
-        if (!cancellationStarted.compareAndSet(false, true)) return
+        if (cancellationStarted) return
+        cancellationStarted = true
 
         val jobsToCancel = jobs.toTypedArray()
         jobs.clear()
@@ -457,30 +455,18 @@ class SaveService : Service() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    private fun readUris(intent: Intent): List<Uri> =
-        try {
-            val values =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableArrayListExtra(EXTRA_URIS, Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableArrayListExtra(EXTRA_URIS)
-                }
-            val result = ArrayList<Uri>(values?.size ?: 0)
-            val seen = HashSet<String>(values?.size ?: 0)
-            if (values != null) {
-                for (uri in values) {
-                    if (!uri.scheme.equals("content", ignoreCase = true)) continue
-                    val normalized = uri.normalizeScheme()
-                    if (seen.add(normalized.toString())) result.add(normalized)
-                }
-            }
-            result
-        } catch (_: BadParcelableException) {
-            emptyList()
-        } catch (_: ClassCastException) {
-            emptyList()
+    private fun readUris(intent: Intent): List<Uri> {
+        val clipData = intent.clipData ?: return emptyList()
+        val result = ArrayList<Uri>(clipData.itemCount)
+        val seen = HashSet<Uri>(clipData.itemCount)
+        for (index in 0 until clipData.itemCount) {
+            val uri = clipData.getItemAt(index).uri ?: continue
+            if (!uri.scheme.equals("content", ignoreCase = true)) continue
+            val normalized = uri.normalizeScheme()
+            if (seen.add(normalized)) result.add(normalized)
         }
+        return result
+    }
 
     private fun Cursor.getNullableString(columnName: String): String? {
         val index = getColumnIndex(columnName)
@@ -589,7 +575,6 @@ class SaveService : Service() {
 
     companion object {
         private const val ACTION_SAVE = "ka.kitool.action.SAVE"
-        private const val EXTRA_URIS = "ka.kitool.extra.URIS"
         private const val CHANNEL_ID = "file_copies"
         private const val NOTIFICATION_ID = 1001
         private const val COPY_BUFFER_SIZE = 128 * 1024
@@ -614,7 +599,6 @@ class SaveService : Service() {
             }
             return Intent(context, SaveService::class.java).apply {
                 action = ACTION_SAVE
-                putParcelableArrayListExtra(EXTRA_URIS, normalizedUris)
                 clipData = grantClipData
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }

@@ -11,13 +11,7 @@ import java.util.regex.Pattern
 import ka.kitool.search.SearchUrl
 
 object BridgeIntents {
-    sealed interface OpenInput {
-        class Content(val uri: Uri, val mimeType: String) : OpenInput
-
-        class Web(val uri: Uri) : OpenInput
-    }
-
-    fun shareToOpen(context: Context, source: Intent): OpenInput? {
+    fun shareToOpen(context: Context, source: Intent): Intent? {
         if (source.action != Intent.ACTION_SEND) return null
 
         val stream =
@@ -34,12 +28,11 @@ object BridgeIntents {
             val clipUris = clipContentUris(source)
             if (
                 clipUris.size > 1 ||
-                    (clipUris.isNotEmpty() &&
-                        clipUris[0].toString() != normalizedStream.toString())
+                    (clipUris.isNotEmpty() && clipUris[0] != normalizedStream)
             ) {
                 return null
             }
-            return OpenInput.Content(
+            return openIntent(
                 normalizedStream,
                 resolveMimeType(context, normalizedStream, source.type),
             )
@@ -50,38 +43,37 @@ object BridgeIntents {
                 .getOrNull()
                 ?.trim()
         val webUrl = if (sharedText != null) SearchUrl.directHttpUrl(sharedText) else null
-        val webInput =
+        val webIntent =
             if (webUrl != null) {
-                OpenInput.Web(Uri.parse(webUrl).normalizeScheme())
+                openIntent(Uri.parse(webUrl).normalizeScheme(), null)
             } else {
                 null
             }
-        if (source.type?.startsWith("text/", ignoreCase = true) == true && webInput != null) {
-            return webInput
+        if (source.type?.startsWith("text/", ignoreCase = true) == true && webIntent != null) {
+            return webIntent
         }
 
         val clipUris = clipContentUris(source)
         if (clipUris.size > 1) return null
         if (clipUris.size == 1) {
             val uri = clipUris[0]
-            return OpenInput.Content(uri, resolveMimeType(context, uri, source.type))
+            return openIntent(uri, resolveMimeType(context, uri, source.type))
         }
-        return webInput
+        return webIntent
     }
 
-    fun openIntent(input: OpenInput): Intent =
-        when (input) {
-            is OpenInput.Content ->
-                Intent(Intent.ACTION_VIEW).apply {
-                    val uri = input.uri.normalizeScheme()
-                    setDataAndTypeAndNormalize(uri, input.mimeType)
-                    clipData = ClipData.newRawUri("", uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-            is OpenInput.Web ->
-                Intent(Intent.ACTION_VIEW, input.uri.normalizeScheme()).apply {
-                    addCategory(Intent.CATEGORY_BROWSABLE)
-                }
+    private fun openIntent(uri: Uri, mimeType: String?): Intent =
+        if (mimeType != null) {
+            val normalizedUri = uri.normalizeScheme()
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndTypeAndNormalize(normalizedUri, mimeType)
+                clipData = ClipData.newRawUri("", normalizedUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        } else {
+            Intent(Intent.ACTION_VIEW, uri.normalizeScheme()).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
+            }
         }
 
     fun openToShare(context: Context, source: Intent): Intent? {
@@ -130,11 +122,11 @@ object BridgeIntents {
             return emptyList()
         }
         val result = ArrayList<Uri>(uris.size)
-        val seen = HashSet<String>(uris.size)
+        val seen = HashSet<Uri>(uris.size)
         for (uri in uris) {
             if (!uri.scheme.equals("content", ignoreCase = true)) continue
             val normalized = uri.normalizeScheme()
-            if (seen.add(normalized.toString())) result.add(normalized)
+            if (seen.add(normalized)) result.add(normalized)
         }
         return result
     }

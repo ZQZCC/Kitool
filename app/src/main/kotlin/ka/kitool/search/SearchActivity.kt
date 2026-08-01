@@ -22,12 +22,6 @@ class SearchActivity : Activity() {
         dispatchSearch(intent)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        dispatchSearch(intent)
-    }
-
     private fun dispatchSearch(source: Intent) {
         val text = normalizeText(extractText(source))
         if (text.isNullOrEmpty()) {

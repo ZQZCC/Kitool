@@ -52,13 +52,7 @@
             android:name=".settings.SettingsActivity"
             android:exported="false"
             android:label="@string/settings_title"
-            android:launchMode="singleTop">
-            <intent-filter>
-                <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
-                <action android:name="android.search.action.WEB_SEARCH_SETTINGS" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:launchMode="singleTop" />
 
         <activity
             android:name=".search.SearchActivity"

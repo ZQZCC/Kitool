@@ -1,6 +1,5 @@
 package ka.kitool.settings
 
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.preference.EditTextPreference
 import android.preference.ListPreference
@@ -8,16 +7,17 @@ import android.preference.Preference
 import android.preference.PreferenceActivity
 import android.widget.Toast
 import ka.kitool.R
-import ka.kitool.search.SearchEngine
+import ka.kitool.search.CUSTOM_SEARCH_ENGINE_ID
 import ka.kitool.search.SearchUrl
+import ka.kitool.search.searchEngineIds
+import ka.kitool.search.searchEngineTitles
 
 @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
 class SettingsActivity :
     PreferenceActivity(),
-    SharedPreferences.OnSharedPreferenceChangeListener {
-    private lateinit var preferences: SharedPreferences
-    private lateinit var searchEngine: ListPreference
-    private lateinit var customSearchTemplate: EditTextPreference
+    Preference.OnPreferenceChangeListener {
+    private var searchEngine: ListPreference? = null
+    private var customSearchTemplate: EditTextPreference? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,73 +25,61 @@ class SettingsActivity :
         preferenceManager.sharedPreferencesName = SettingsStore.FILE_NAME
         addPreferencesFromResource(R.xml.settings)
 
-        searchEngine =
+        val searchEngine =
             preferenceScreen.findPreference(SettingsStore.KEY_SEARCH_ENGINE) as ListPreference
-        customSearchTemplate =
+        val customSearchTemplate =
             preferenceScreen.findPreference(SettingsStore.KEY_CUSTOM_SEARCH_TEMPLATE)
                 as EditTextPreference
+        this.searchEngine = searchEngine
+        this.customSearchTemplate = customSearchTemplate
 
-        val engines = SearchEngine.all
+        val engineTitles = searchEngineTitles()
         searchEngine.entries =
-            Array(engines.size) { index -> getString(engines[index].titleRes) }
-        searchEngine.entryValues =
-            Array(engines.size) { index -> engines[index].id }
+            Array(engineTitles.size) { index -> getString(engineTitles[index]) }
+        searchEngine.entryValues = searchEngineIds()
+        searchEngine.onPreferenceChangeListener = this
+        customSearchTemplate.onPreferenceChangeListener = this
 
-        customSearchTemplate.onPreferenceChangeListener =
-            Preference.OnPreferenceChangeListener { _, newValue ->
-                validate(
-                    SearchUrl.isValidTemplate(newValue.toString()),
-                    R.string.custom_search_template_invalid,
-                )
+        updateEngine(searchEngine.value)
+    }
+
+    override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
+        if (preference === searchEngine) {
+            updateEngine(newValue.toString())
+            return true
+        }
+        if (preference === customSearchTemplate) {
+            val template = newValue.toString()
+            if (!SearchUrl.isValidTemplate(template)) {
+                Toast.makeText(
+                        this,
+                        R.string.custom_search_template_invalid,
+                        Toast.LENGTH_SHORT,
+                    )
+                    .show()
+                return false
             }
-
-        preferences = preferenceScreen.sharedPreferences
+            customSearchTemplate?.summary = template
+        }
+        return true
     }
 
-    override fun onResume() {
-        super.onResume()
-        preferences.registerOnSharedPreferenceChangeListener(this)
-        updatePreferences()
-    }
+    private fun updateEngine(engineId: String?) {
+        val searchEngine = searchEngine ?: return
+        val customSearchTemplate = customSearchTemplate ?: return
+        val foundIndex = searchEngine.findIndexOfValue(engineId)
+        val index = if (foundIndex >= 0) foundIndex else 0
+        searchEngine.summary = searchEngine.entries[index]
 
-    override fun onPause() {
-        preferences.unregisterOnSharedPreferenceChangeListener(this)
-        super.onPause()
-    }
-
-    override fun onSharedPreferenceChanged(
-        sharedPreferences: SharedPreferences,
-        key: String?,
-    ) {
-        updatePreferences()
-    }
-
-    private fun updatePreferences() {
-        val engine =
-            SearchEngine.fromId(
-                preferences.getString(SettingsStore.KEY_SEARCH_ENGINE, null)
-            )
-        searchEngine.summary = getString(engine.titleRes)
-
-        if (engine == SearchEngine.CUSTOM) {
+        if (engineId?.equals(CUSTOM_SEARCH_ENGINE_ID) == true) {
             preferenceScreen.addPreference(customSearchTemplate)
             customSearchTemplate.summary =
-                preferences.getString(
+                preferenceScreen.sharedPreferences.getString(
                     SettingsStore.KEY_CUSTOM_SEARCH_TEMPLATE,
                     SettingsStore.DEFAULT_CUSTOM_TEMPLATE,
                 )
         } else {
             preferenceScreen.removePreference(customSearchTemplate)
         }
-    }
-
-    private fun validate(
-        valid: Boolean,
-        errorMessage: Int,
-    ): Boolean {
-        if (!valid) {
-            Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
-        }
-        return valid
     }
 }

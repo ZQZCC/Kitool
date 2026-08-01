@@ -39,11 +39,11 @@ object IncomingFiles {
         }
 
         val result = ArrayList<Uri>(uris.size)
-        val seen = HashSet<String>(uris.size)
+        val seen = HashSet<Uri>(uris.size)
         for (uri in uris) {
             if (
                 uri.scheme.equals("content", ignoreCase = true) &&
-                    seen.add(uri.toString())
+                    seen.add(uri)
             ) {
                 result.add(uri)
             }
