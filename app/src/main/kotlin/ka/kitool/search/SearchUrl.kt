@@ -1,6 +1,7 @@
 package ka.kitool.search
 
 import java.net.URI
+import java.net.URISyntaxException
 import java.net.URLEncoder
 
 object SearchUrl {
@@ -28,11 +29,12 @@ object SearchUrl {
         ) {
             return false
         }
-        return runCatching {
-                val uri = URI(template.replace(QUERY_PLACEHOLDER, "query"))
-                uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
-            }
-            .getOrDefault(false)
+        return try {
+            val uri = URI(template.replace(QUERY_PLACEHOLDER, "query"))
+            uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
+        } catch (_: URISyntaxException) {
+            false
+        }
     }
 
     fun directHttpUrl(text: String): String? {
@@ -42,14 +44,12 @@ object SearchUrl {
         ) {
             return null
         }
-        return runCatching {
-                val uri = URI(text)
-                val supportedScheme =
-                    uri.scheme.equals("http", ignoreCase = true) ||
-                        uri.scheme.equals("https", ignoreCase = true)
-                if (supportedScheme && !uri.host.isNullOrBlank()) uri.toASCIIString() else null
-            }
-            .getOrNull()
+        return try {
+            val uri = URI(text)
+            if (!uri.host.isNullOrBlank()) uri.toASCIIString() else null
+        } catch (_: URISyntaxException) {
+            null
+        }
     }
 
     internal fun encodeQuery(value: String): String =

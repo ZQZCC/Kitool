@@ -39,9 +39,11 @@ object BridgeIntents {
         }
 
         val sharedText =
-            runCatching { source.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString() }
-                .getOrNull()
-                ?.trim()
+            try {
+                source.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+            } catch (_: RuntimeException) {
+                null
+            }?.trim()
         val webUrl = if (sharedText != null) SearchUrl.directHttpUrl(sharedText) else null
         val webIntent =
             if (webUrl != null) {
@@ -64,14 +66,13 @@ object BridgeIntents {
 
     private fun openIntent(uri: Uri, mimeType: String?): Intent =
         if (mimeType != null) {
-            val normalizedUri = uri.normalizeScheme()
             Intent(Intent.ACTION_VIEW).apply {
-                setDataAndTypeAndNormalize(normalizedUri, mimeType)
-                clipData = ClipData.newRawUri("", normalizedUri)
+                setDataAndTypeAndNormalize(uri, mimeType)
+                clipData = ClipData.newRawUri("", uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
         } else {
-            Intent(Intent.ACTION_VIEW, uri.normalizeScheme()).apply {
+            Intent(Intent.ACTION_VIEW, uri).apply {
                 addCategory(Intent.CATEGORY_BROWSABLE)
             }
         }
@@ -136,7 +137,12 @@ object BridgeIntents {
         uri: Uri,
         incomingType: String?,
     ): String {
-        val resolved = runCatching { context.contentResolver.getType(uri) }.getOrNull()
+        val resolved =
+            try {
+                context.contentResolver.getType(uri)
+            } catch (_: RuntimeException) {
+                null
+            }
         if (resolved != null && isSafeMimeType(resolved)) return resolved
         if (incomingType != null && isSafeMimeType(incomingType)) return incomingType
         return DEFAULT_MIME_TYPE

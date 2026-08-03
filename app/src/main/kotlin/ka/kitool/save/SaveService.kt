@@ -36,7 +36,6 @@ class SaveService : Service() {
     private val jobs = HashSet<CopyJob>()
     private var cancellationStarted = false
 
-    @Volatile
     private var latestStartId = 0
 
     @Volatile
@@ -149,8 +148,8 @@ class SaveService : Service() {
     }
 
     private fun cancelJobsAsync() {
-        executor.shutdownNow()
         if (cancellationStarted) return
+        executor.shutdownNow()
         cancellationStarted = true
 
         val jobsToCancel = jobs.toTypedArray()
@@ -405,7 +404,7 @@ class SaveService : Service() {
         total: Long?,
         force: Boolean,
     ) {
-        if (job.isCancelled() || stopping) return
+        if (stopping) return
         val now = SystemClock.elapsedRealtime()
         if (!force && now - job.lastNotificationUpdate < NOTIFICATION_UPDATE_INTERVAL_MS) return
         job.lastNotificationUpdate = now
@@ -499,7 +498,6 @@ class SaveService : Service() {
         private val output = AtomicReference<OutputStream?>()
         private val signal = AtomicReference<CancellationSignal?>()
 
-        @Volatile
         var lastNotificationUpdate = 0L
 
         @Volatile

@@ -59,7 +59,7 @@ class SettingsActivity :
                     .show()
                 return false
             }
-            customSearchTemplate?.summary = template
+            preference.summary = template
         }
         return true
     }

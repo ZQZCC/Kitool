@@ -7,14 +7,6 @@ import android.os.Build
 
 object IncomingFiles {
     fun from(intent: Intent): List<Uri> {
-        if (
-            intent.action != Intent.ACTION_VIEW &&
-                intent.action != Intent.ACTION_SEND &&
-                intent.action != Intent.ACTION_SEND_MULTIPLE
-        ) {
-            return emptyList()
-        }
-
         val uris = mutableListOf<Uri>()
         try {
             when (intent.action) {
@@ -22,6 +14,7 @@ object IncomingFiles {
                 Intent.ACTION_SEND -> getUriExtra(intent, Intent.EXTRA_STREAM)?.let(uris::add)
                 Intent.ACTION_SEND_MULTIPLE ->
                     getUriListExtra(intent, Intent.EXTRA_STREAM)?.let(uris::addAll)
+                else -> return emptyList()
             }
 
             val clipData = intent.clipData

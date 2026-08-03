@@ -5,6 +5,7 @@
     <string name="action_web_search">网页搜索</string>
     <string name="action_share_to_open">转为打开</string>
     <string name="action_open_to_share">转为分享</string>
+    <string name="action_keep_awake">保持亮屏</string>
     <string name="settings_title">设置</string>
 
     <string name="search_engine">搜索引擎</string>
